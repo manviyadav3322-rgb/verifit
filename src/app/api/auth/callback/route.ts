@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
   const projectId = process.env.MANUS_PROJECT_ID;
   if (!apiBase || !projectId) return fail(callbackOrigin, "auth_unavailable");
 
+  let failureStage = "token_exchange";
   try {
     const tokenResponse = await fetch(new URL("/webdev.v1.WebDevAuthPublicService/ExchangeToken", apiBase), {
       method: "POST",
@@ -37,25 +38,34 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
       body: JSON.stringify({ clientId: projectId, grantType: "authorization_code", code, redirectUri: state.redirectUri }),
     });
-    if (!tokenResponse.ok) return fail(callbackOrigin);
+    if (!tokenResponse.ok) {
+      console.error("VeriFit OAuth token exchange rejected with HTTP", tokenResponse.status);
+      return fail(callbackOrigin, "token_exchange_failed");
+    }
     const tokenBody = await tokenResponse.json() as { accessToken?: unknown };
-    if (typeof tokenBody.accessToken !== "string" || tokenBody.accessToken.length < 10) return fail(callbackOrigin);
+    if (typeof tokenBody.accessToken !== "string" || tokenBody.accessToken.length < 10) return fail(callbackOrigin, "token_exchange_failed");
 
+    failureStage = "identity_lookup";
     const identityResponse = await fetch(new URL("/webdev.v1.WebDevAuthPublicService/GetUserInfo", apiBase), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
       body: JSON.stringify({ accessToken: tokenBody.accessToken }),
     });
-    if (!identityResponse.ok) return fail(callbackOrigin);
+    if (!identityResponse.ok) {
+      console.error("VeriFit OAuth identity lookup rejected with HTTP", identityResponse.status);
+      return fail(callbackOrigin, "identity_lookup_failed");
+    }
     const identity = await identityResponse.json() as { openId?: unknown; email?: unknown; name?: unknown };
-    if (typeof identity.openId !== "string" || !identity.openId) return fail(callbackOrigin);
+    if (typeof identity.openId !== "string" || !identity.openId) return fail(callbackOrigin, "identity_lookup_failed");
 
+    failureStage = "account_setup";
     const user = await upsertOAuthUser({
       openId: identity.openId,
       email: typeof identity.email === "string" ? identity.email : null,
       name: typeof identity.name === "string" ? identity.name : "Student",
     });
+    failureStage = "session_setup";
     const token = await signSession(user);
     const response = NextResponse.redirect(new URL("/dashboard", callbackOrigin));
     const secure = new URL(callbackOrigin).protocol === "https:";
@@ -63,7 +73,12 @@ export async function GET(request: NextRequest) {
     response.cookies.set(OAUTH_STATE_COOKIE, "", { httpOnly: true, secure, sameSite: secure ? "none" : "lax", path: "/", maxAge: 0 });
     response.headers.set("Cache-Control", "no-store");
     return response;
-  } catch {
-    return fail(callbackOrigin, "auth_failed");
+  } catch (error) {
+    if (error instanceof Error && error.message === "This VeriFit account is disabled.") {
+      console.error("VeriFit OAuth account is disabled.");
+      return fail(callbackOrigin, "account_disabled");
+    }
+    console.error("VeriFit OAuth callback failed at stage:", failureStage);
+    return fail(callbackOrigin, `${failureStage}_failed`);
   }
 }

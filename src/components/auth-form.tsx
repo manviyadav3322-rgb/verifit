@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/brand";
@@ -10,6 +10,20 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const isSignup = mode === "signup";
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const messages: Record<string, string> = {
+      auth_failed: "Manus returned to VeriFit, but sign-in could not be completed. Please try again.",
+      auth_unavailable: "Manus sign-in is not configured for this Preview. Contact the site owner.",
+      token_exchange_failed: "Manus could not validate the sign-in response. Please try again.",
+      identity_lookup_failed: "Your Manus identity could not be verified. Please try again.",
+      account_setup_failed: "Your VeriFit account could not be loaded. Please try again or contact an administrator.",
+      account_disabled: "This VeriFit account is disabled. Ask an administrator to restore access.",
+      session_setup_failed: "A secure session could not be created. Please try again.",
+    };
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (code && messages[code]) setError(messages[code]);
+  }, []);
 
   async function continueWithManus() {
     setBusy(true);
