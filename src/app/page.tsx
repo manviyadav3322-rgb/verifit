@@ -7,9 +7,9 @@ import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const previewRows = [
-  ["React", "Skill", "MET"],
-  ["PostgreSQL", "Skill", "PARTIAL"],
-  ["System Design", "Skill", "NOT EVIDENCED"],
+  ["Supporting citation", "Evidence", "MET"],
+  ["Incomplete evidence", "Evidence", "PARTIAL"],
+  ["No current support", "Evidence", "NOT EVIDENCED"],
 ];
 
 export default function LandingPage() {
@@ -30,13 +30,12 @@ export default function LandingPage() {
           <div className="hero-note"><CheckCircle2 size={15} /> No hiring predictions. Just clear evidence and next steps.</div>
         </motion.div>
 
-        <motion.div className="preview-frame" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }} aria-label="Preview of the VeriFit dashboard">
+        <motion.div className="preview-frame" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }} aria-label="Illustrative view of evidence status logic">
           <div className="preview-window">
-            <div className="preview-topline"><div className="preview-dots"><i /><i /><i /></div><span>verifit.app / dashboard</span><span>· · ·</span></div>
+            <div className="preview-topline"><div className="preview-dots"><i /><i /><i /></div><span>verifit.app / evidence preview</span><span>· · ·</span></div>
             <div className="preview-content">
-              <div className="preview-heading"><div><strong>Good evening, Manvi</strong><p>Here&apos;s where you stand for your target role.</p></div><div className="preview-pass"><CheckCircle2 size={13} /> ELIGIBLE</div></div>
-              <div className="preview-stats"><div className="preview-stat"><b>8</b><small>Met</small></div><div className="preview-stat"><b>2</b><small>Partial</small></div><div className="preview-stat"><b>2</b><small>Not evidenced</small></div></div>
-              <div className="preview-table-head"><span>Requirement</span><span>Type</span><span>Status</span></div>
+              <div className="preview-heading"><div><strong>Evidence status examples</strong><p>Illustrative only — no student or job records.</p></div><div className="preview-pass"><ShieldCheck size={13} /> RULES ARE SEPARATE</div></div>
+              <div className="preview-table-head"><span>Evidence state</span><span>Basis</span><span>Verdict</span></div>
               {previewRows.map(([name, type, status]) => <div className="preview-row" key={name}><span>{name}</span><span>{type}</span><span>{status === "MET" ? <span style={{ color: "var(--green)" }}>✓&nbsp; MET</span> : status === "PARTIAL" ? <span style={{ color: "var(--amber)" }}>◐&nbsp; PARTIAL</span> : <span style={{ color: "var(--muted-strong)" }}>○&nbsp; NOT EVIDENCED</span>}</span></div>)}
             </div>
           </div>
@@ -49,7 +48,7 @@ export default function LandingPage() {
         <div className="proof-item"><span className="proof-icon"><FileSearch2 size={16} /></span><div><strong>Every verdict has context</strong><p>See the exact resume or project text behind MET, PARTIAL, and NOT EVIDENCED.</p></div></div>
         <div className="proof-item"><span className="proof-icon"><Waypoints size={16} /></span><div><strong>Gaps become next steps</strong><p>Follow small actions that turn missing or incomplete evidence into something verifiable.</p></div></div>
       </section>
-      <footer className="landing-footer"><span>© 2026 VeriFit</span><span>Demo product · Readiness is evidence, not probability.</span><Link href="/dashboard" style={{ color: "var(--muted-strong)", textDecoration: "none" }}>Open the demo <ArrowRight size={12} style={{ verticalAlign: "middle" }} /></Link></footer>
+      <footer className="landing-footer"><span>© 2026 VeriFit</span><span>Evidence-grounded readiness · No placement predictions.</span><Link href="/login" style={{ color: "var(--muted-strong)", textDecoration: "none" }}>Sign in <ArrowRight size={12} style={{ verticalAlign: "middle" }} /></Link></footer>
     </main>
   );
 }

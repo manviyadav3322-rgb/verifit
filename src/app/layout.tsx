@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ProfileProvider } from "@/components/profile-provider";
 import { ThemedToaster } from "@/components/themed-toaster";
 import "./globals.css";
 
@@ -15,10 +14,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="verifit-theme">
-          <ProfileProvider>
-            {children}
-            <ThemedToaster />
-          </ProfileProvider>
+          {children}
+          <ThemedToaster />
         </ThemeProvider>
       </body>
     </html>

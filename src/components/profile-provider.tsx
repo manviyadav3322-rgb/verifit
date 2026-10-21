@@ -1,58 +1,26 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { profile as sampleProfile } from "@/data/mock-data";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { ProfileData } from "@/lib/types";
 
-export interface ProfileData {
-  name: string;
-  college: string;
-  degree: string;
-  branch: string;
-  graduationYear: string;
-  cgpa: string;
-  backlogCount: string;
-  targetRole: string;
-  skills: string[];
-  projects: string[];
-  certifications: string[];
-  github: string;
-  linkedin: string;
-}
-
-const defaultProfile: ProfileData = {
-  ...sampleProfile,
-  skills: [...sampleProfile.skills],
-  projects: [...sampleProfile.projects],
-  certifications: [...sampleProfile.certifications],
-};
-
-type ProfileContextValue = { profile: ProfileData; updateProfile: (changes: Partial<ProfileData>) => void; resetProfile: () => void };
+export type { ProfileData } from "@/lib/types";
+type ProfileContextValue = { profile: ProfileData; updateProfile: (changes: Partial<ProfileData>) => Promise<ProfileData> };
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
-export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [current, setCurrent] = useState<ProfileData>(defaultProfile);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("verifit-profile");
-      if (saved) setCurrent({ ...defaultProfile, ...JSON.parse(saved) as Partial<ProfileData> });
-    } catch { /* retain the sample profile if browser storage is unavailable */ }
-  }, []);
-
-  const updateProfile = useCallback((changes: Partial<ProfileData>) => {
-    setCurrent((previous) => {
-      const next = { ...previous, ...changes };
-      try { localStorage.setItem("verifit-profile", JSON.stringify(next)); } catch { /* state remains usable for this session */ }
-      return next;
+export function ProfileProvider({ children, initialProfile }: { children: ReactNode; initialProfile: ProfileData }) {
+  const [current, setCurrent] = useState(initialProfile);
+  const updateProfile = useCallback(async (changes: Partial<ProfileData>) => {
+    const response = await fetch("/api/data/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
     });
+    const result = await response.json() as { profile?: ProfileData; error?: string };
+    if (!response.ok || !result.profile) throw new Error(result.error ?? "Profile could not be saved.");
+    setCurrent(result.profile);
+    return result.profile;
   }, []);
-
-  const resetProfile = useCallback(() => {
-    setCurrent(defaultProfile);
-    try { localStorage.removeItem("verifit-profile"); } catch { /* ignore storage restrictions */ }
-  }, []);
-
-  const value = useMemo(() => ({ profile: current, updateProfile, resetProfile }), [current, updateProfile, resetProfile]);
+  const value = useMemo(() => ({ profile: current, updateProfile }), [current, updateProfile]);
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
 
