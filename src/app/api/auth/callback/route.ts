@@ -10,7 +10,6 @@ function fail(origin: string | null, code = "auth_failed") {
   const response = NextResponse.redirect(url);
   const secure = new URL(origin).protocol === "https:";
   response.cookies.set(OAUTH_STATE_COOKIE, "", { httpOnly: true, secure, sameSite: secure ? "none" : "lax", path: "/", maxAge: 0 });
-  response.cookies.set(SESSION_COOKIE, "", { httpOnly: true, secure, sameSite: secure ? "none" : "lax", path: "/", maxAge: 0 });
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
@@ -21,11 +20,19 @@ export async function GET(request: NextRequest) {
   const origin = state ? new URL(state.redirectUri).origin : null;
   const jar = await cookies();
   const cookieState = jar.get(OAUTH_STATE_COOKIE)?.value;
-  if (!state || !equalState(cookieState, stateValue)) return fail(origin);
+  if (!state) {
+    console.error("VeriFit OAuth rejected an invalid state payload.");
+    return fail(origin, "oauth_state_invalid");
+  }
+  if (!equalState(cookieState, stateValue)) {
+    const errorCode = cookieState ? "oauth_state_mismatch" : "oauth_state_cookie_missing";
+    console.error("VeriFit OAuth state binding failed:", cookieState ? "cookie mismatch" : "cookie missing");
+    return fail(origin, errorCode);
+  }
 
   const callbackOrigin = new URL(state.redirectUri).origin;
   const code = request.nextUrl.searchParams.get("code");
-  if (!code || code.length > 4096) return fail(callbackOrigin);
+  if (!code || code.length > 4096) return fail(callbackOrigin, "oauth_code_missing");
   const apiBase = process.env.MANUS_OAUTH_API_URL;
   const projectId = process.env.MANUS_PROJECT_ID;
   if (!apiBase || !projectId) return fail(callbackOrigin, "auth_unavailable");

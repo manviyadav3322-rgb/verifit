@@ -20,6 +20,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       account_setup_failed: "Your VeriFit account could not be loaded. Please try again or contact an administrator.",
       account_disabled: "This VeriFit account is disabled. Ask an administrator to restore access.",
       session_setup_failed: "A secure session could not be created. Please try again.",
+      oauth_state_invalid: "This sign-in request is invalid or expired. Start again from this page.",
+      oauth_state_cookie_missing: "Your browser did not retain the sign-in cookie. Open this Preview in a standalone tab and retry; embedded Preview can block it.",
+      oauth_state_mismatch: "The sign-in state did not match the request that started it. Restart sign-in in one tab from the same Preview.",
+      oauth_code_missing: "Manus returned without a sign-in code. Please start sign-in again.",
     };
     const code = new URLSearchParams(window.location.search).get("error");
     if (code && messages[code]) setError(messages[code]);
