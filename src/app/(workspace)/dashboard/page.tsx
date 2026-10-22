@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ClipboardCheck, FileSearch2, Info, ShieldCheck } from "lucide-react";
 import { Card, PageTitle } from "@/components/ui/primitives";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { DashboardReadinessTabs } from "@/components/features/dashboard-readiness-tabs";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getDashboard } from "@/lib/data/dashboard";
 
@@ -23,11 +23,20 @@ export default async function DashboardPage() {
     <PageTitle eyebrow={formatDate(new Date())} title={`Good evening, ${firstName}`} description="Here's where you stand for your target role." action={<Link href="/jobs" className="button button-primary button-md"><ClipboardCheck size={15} /> Browse jobs</Link>} />
     <div className="dashboard-grid">
       <div style={{ display: "grid", gap: 16, minWidth: 0 }}>
-        <div className="data-stat-grid">
-          <Card className="data-stat"><span>Open jobs</span><strong>{stats.openJobs}</strong><Link href="/jobs">Browse roles <ArrowRight size={12} /></Link></Card>
-          <Card className="data-stat"><span>Applications</span><strong>{stats.applicationCount}</strong><Link href="/applications">Track applications <ArrowRight size={12} /></Link></Card>
-          <Card className="data-stat"><span>Assessments</span><strong>{stats.totalAssessments}</strong><Link href="/history">View history <ArrowRight size={12} /></Link></Card>
-        </div>
+        <nav className="dashboard-action-grid" aria-label="Dashboard shortcuts">
+          <Link href="/jobs" className="dashboard-action-card dashboard-action-card--jobs" aria-label={`Browse roles: ${stats.openJobs} open jobs`}>
+            <span className="dashboard-action-top"><span className="dashboard-action-label">Open jobs</span><span className="dashboard-action-badge">{stats.openJobs} active</span></span>
+            <span className="dashboard-action-bottom"><span className="dashboard-action-title">Browse roles</span><span className="dashboard-action-icon" aria-hidden="true"><ArrowRight size={16} /></span></span>
+          </Link>
+          <Link href="/applications" className="dashboard-action-card dashboard-action-card--applications" aria-label={`Track applications: ${stats.applicationCount} tracked`}>
+            <span className="dashboard-action-top"><span className="dashboard-action-label">Applications</span><span className="dashboard-action-badge">{stats.applicationCount} tracked</span></span>
+            <span className="dashboard-action-bottom"><span className="dashboard-action-title">Track applications</span><span className="dashboard-action-icon" aria-hidden="true"><ArrowRight size={16} /></span></span>
+          </Link>
+          <Link href="/history" className="dashboard-action-card dashboard-action-card--assessments" aria-label={`View assessment history: ${stats.totalAssessments} total`}>
+            <span className="dashboard-action-top"><span className="dashboard-action-label">Assessments</span><span className="dashboard-action-badge">{stats.totalAssessments} total</span></span>
+            <span className="dashboard-action-bottom"><span className="dashboard-action-title">View history</span><span className="dashboard-action-icon" aria-hidden="true"><ArrowRight size={16} /></span></span>
+          </Link>
+        </nav>
         <Card className="section-card eligibility-card">
           <div className="card-heading"><div className="eligibility-title"><span className="eligibility-icon"><ShieldCheck size={17} /></span><div><h2>Eligibility</h2><p>{latestAssessment ? `Hard rules for ${latestAssessment.job.title}` : "Hard job rules are checked separately from evidence fit."}</p></div></div>
             {latestAssessment ? <span className="eligibility-count">{latestAssessment.eligibilitySummary.passed}/{latestAssessment.eligibilitySummary.total} passed</span> : <Link href="/eligibility" className="table-action">Check a job</Link>}
@@ -36,16 +45,10 @@ export default async function DashboardPage() {
         </Card>
         <Card className="section-card readiness-card">
           <div className="card-heading"><div><h2>Evidence readiness</h2><p>{latestAssessment ? `${latestAssessment.job.title} · ${formatDate(latestAssessment.startedAt)}` : "Evidence fit is calculated only from linked evidence and reviews."}</p></div>{latestAssessment ? <Link href={`/assessment/result?id=${latestAssessment.id}`} className="table-action">Open assessment</Link> : <Link href="/assessment" className="table-action">Start assessment</Link>}</div>
-          {latestAssessment ? <>
-            <div className="data-stat-grid compact-stats">
-              <div className="data-stat"><span>Met</span><strong>{latestAssessment.summary.met}</strong></div>
-              <div className="data-stat"><span>Partial</span><strong>{latestAssessment.summary.partial}</strong></div>
-              <div className="data-stat"><span>Not evidenced</span><strong>{latestAssessment.summary.notEvidenced}</strong></div>
-            </div>
-            <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Requirement</th><th>Type</th><th>Status</th><th>Evidence</th></tr></thead><tbody>
-              {resultRows.slice(0, 8).map((row) => <tr key={row.requirementId}><td>{row.requirementName}</td><td>{row.requirementKind}</td><td><StatusBadge verdict={row.verdict} /></td><td>{row.evidence.length} source{row.evidence.length === 1 ? "" : "s"}</td></tr>)}
-            </tbody></table></div>
-          </> : <p className="data-empty-inline">No assessment is saved yet. Add a real job first, then assess your current evidence against its requirements.</p>}
+          {latestAssessment ? <DashboardReadinessTabs
+            summary={latestAssessment.summary}
+            rows={resultRows.map((row) => ({ requirementId: row.requirementId, requirementName: row.requirementName, requirementKind: row.requirementKind, verdict: row.verdict, evidenceCount: row.evidence.length }))}
+          /> : <p className="data-empty-inline">No assessment is saved yet. Add a real job first, then assess your current evidence against its requirements.</p>}
         </Card>
       </div>
       <aside style={{ display: "grid", alignContent: "start", gap: 15 }}>
